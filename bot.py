@@ -1,3 +1,4 @@
+
 import asyncio
 from telegram import Update
 from telegram.ext import (
@@ -7,35 +8,35 @@ from telegram.ext import (
     filters,
 )
 
-# 🔴 YAHAN APNA BOT TOKEN DALO
 TOKEN = "8306418938:AAEA4LRUY-FWGHIWMpktCs5pVBk5h4UnUyk"
-
-# ⏱️ DELETE DELAY (seconds)
 DELETE_DELAY = 40
 
 
 def contains_bot_or_mention(message) -> bool:
-    # Combine text + caption
+    # 1️⃣ Text + Caption
     text = (message.text or "") + (message.caption or "")
     text_lower = text.lower()
 
-    # 🔹 Normal text check (@ or bot)
     if "@" in text_lower or "bot" in text_lower:
         return True
 
-    # 🔹 Entity & Hidden link check
+    # 2️⃣ Entities (hidden / normal links)
     entities = (message.entities or []) + (message.caption_entities or [])
     for ent in entities:
-        # Hidden link: [Click here](https://t.me/abc_bot)
         if ent.type == "text_link":
             if ent.url and "bot" in ent.url.lower():
                 return True
-
-        # Normal URL: https://t.me/abc_bot
         elif ent.type == "url":
             extracted = text[ent.offset: ent.offset + ent.length]
             if "bot" in extracted.lower():
                 return True
+
+    # 3️⃣ INLINE BUTTONS (MAIN FIX 🔥)
+    if message.reply_markup and message.reply_markup.inline_keyboard:
+        for row in message.reply_markup.inline_keyboard:
+            for button in row:
+                if button.url and "bot" in button.url.lower():
+                    return True
 
     return False
 
@@ -50,7 +51,7 @@ async def channel_post_handler(update: Update, context: ContextTypes.DEFAULT_TYP
                 chat_id=message.chat.id,
                 message_id=message.message_id
             )
-            print("Deleted message:", message.message_id)
+            print("Deleted FULL post:", message.message_id)
         except Exception as e:
             print("Delete failed:", e)
 
